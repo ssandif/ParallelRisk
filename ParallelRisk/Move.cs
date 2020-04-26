@@ -45,6 +45,11 @@ namespace ParallelRisk
                     yield return (41.67, _state.AttackUpdate(From.ModifyTroops(-1), To.ChangeControl(From.Player, 1)));
                     // Defense wins
                     yield return (58.33, _state.AttackUpdate(From.ModifyTroops(-1), To));
+                } else if (To.TroopCount == 2) {
+                    // Attack wins
+                    yield return (25.46, _state.AttackUpdate(From.ModifyTroops(-1), To.ChangeControl(From.Player, 1)));
+                    // Defense wins
+                    yield return (74.54, _state.AttackUpdate(From.ModifyTroops(-1), To));
                 }
             } else if (From.TroopCount == 3) {
                 // 2 attackers vs defense
