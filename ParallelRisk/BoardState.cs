@@ -85,7 +85,7 @@ namespace ParallelRisk
 
             foreach (Territory from in Territories)
             {
-                if (IsCurrentPlayer(from.Player))
+                if (IsCurrentPlayer(from.Player) && from.TroopCount > 1)
                 {
                     foreach (int tid in Adjacency.Adjacent(from.Id))
                     {
