@@ -22,7 +22,7 @@ namespace ParallelRisk
             var builder = _territories.ToBuilder();
             builder[from.Id] = from;
             builder[to.Id] = to;
-            return new BoardState(_continents, _adjacency, builder.ToImmutable(), IsMaxPlayerTurn);
+            return new BoardState(_continents, _adjacency, builder.MoveToImmutable(), IsMaxPlayerTurn);
         }
 
         public BoardState PassTurn()
@@ -30,18 +30,7 @@ namespace ParallelRisk
             return new BoardState(_continents, _adjacency, _territories, !IsMaxPlayerTurn);
         }
 
-        public List<Territory> AttackableTerritories(int id)
-        {
-            if (_territories[id].TroopCount <= 1)
-                return new List<Territory>();
-
-            Player player = _territories[id].Player;
-
-            //return _adjacency.Adjacent(id).Where(x => _territories[x].Player != player).Select(x => _territories[x]).ToList();
-            return null;
-        }
-
-        public int ContinentBonus(Player player)
+        public int TotalContinentBonus(Player player)
         {
             int bonus = 0;
             foreach (Continent continent in _continents)
@@ -79,7 +68,7 @@ namespace ParallelRisk
             const double C = 1;
             double value = 0;
             value += TotalTerritoriesControlled(Player.Max) - TotalTerritoriesControlled(Player.Min);
-            value += C * (ContinentBonus(Player.Max) - ContinentBonus(Player.Min));
+            value += C * (TotalContinentBonus(Player.Max) - TotalContinentBonus(Player.Min));
             return value;
         }
 

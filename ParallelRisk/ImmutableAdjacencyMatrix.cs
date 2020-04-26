@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ParallelRisk
 {
-    public struct ImmutableAdjacencyMatrix
+    public readonly struct ImmutableAdjacencyMatrix
 
     {
         private readonly bool[,] _matrix;

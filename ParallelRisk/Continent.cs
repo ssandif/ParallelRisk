@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 
 namespace ParallelRisk
 {
@@ -7,16 +6,13 @@ namespace ParallelRisk
     {
         public string Name { get; }
         public int Bonus { get; }
-
-        public IEnumerable<int> Territories => _territories;
-
-        private readonly ImmutableArray<int> _territories;
+        public ImmutableArray<int> Territories { get; }
 
         public Continent(string name, int bonus, ImmutableArray<int> territories)
         {
             Name = name;
             Bonus = bonus;
-            _territories = territories;
+            Territories = territories;
         }
     }
 }
