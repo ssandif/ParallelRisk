@@ -30,7 +30,7 @@ namespace ParallelRisk
             Iceland,
             Scandinavia,
             Ukraine,
-            GreatBritian,
+            GreatBritain,
             NorthernEurope,
             SouthernEurope,
             WesternEurope,
@@ -87,7 +87,7 @@ namespace ParallelRisk
                     Id.Iceland,
                     Id.Scandinavia,
                     Id.Ukraine,
-                    Id.GreatBritian,
+                    Id.GreatBritain,
                     Id.NorthernEurope,
                     Id.SouthernEurope,
                     Id.WesternEurope)),
@@ -112,15 +112,142 @@ namespace ParallelRisk
 
             );
             ImmutableAdjacencyMatrix.Builder builder = ImmutableAdjacencyMatrix.CreateBuilder(42);
+            /*  Comment note: 
+             *  // comments represent countries already attached to + the name of the current
+             *  Multi line ones represent the current continent.
+             */
+            /* **North America** */
+            // Alaska -> First
+            AddConnection(builder, Id.Alaska, Id.Kamchatka);
             AddConnection(builder, Id.Alaska, Id.NorthwestTerritory);
             AddConnection(builder, Id.Alaska, Id.Alberta);
+            // NW Terrority -> Hooked to Alaska
             AddConnection(builder, Id.NorthwestTerritory, Id.Greenland);
             AddConnection(builder, Id.NorthwestTerritory, Id.Ontario);
             AddConnection(builder, Id.NorthwestTerritory, Id.Alberta);
+            // Alberta -> Hooked to NW Territory / Alaska
             AddConnection(builder, Id.Alberta, Id.Ontario);
             AddConnection(builder, Id.Alberta, Id.WesternUnitedStates);
+            // Greenland -> Hooked to NW Territory/Alberta 
             AddConnection(builder, Id.Greenland, Id.Ontario);
             AddConnection(builder, Id.Greenland, Id.Quebec);
+            AddConnection(builder, Id.Greenland, Id.Iceland);
+            // Ontario -> Hooked to Greenland/Alberta/NW Territories
+            AddConnection(builder, Id.Ontario, Id.Quebec);
+            AddConnection(builder, Id.Ontario, Id.WesternUnitedStates);
+            AddConnection(builder, Id.Ontario, Id.EasternUnitedStates);
+            // Quebec -> Already hooked to Ontario/Greenland
+            AddConnection(builder, Id.Quebec, Id.EasternUnitedStates);
+            // Western US -> Hooked to Alberta/Ontario
+            AddConnection(builder, Id.WesternUnitedStates, Id.EasternUnitedStates);
+            AddConnection(builder, Id.WesternUnitedStates, Id.CentralAmerica);
+            // Eastern US -> Hooked to Ontario / Quebec / Eastern US 
+            AddConnection(builder, Id.EasternUnitedStates, Id.CentralAmerica);
+            // Central America -> Hooked to USA
+            AddConnection(builder, Id.CentralAmerica, Id.Venezuela);
+            /* **South America** */
+            // Venezuela -> Hooked to CAmerica
+            AddConnection(builder, Id.Venezuela, Id.Brazil);
+            AddConnection(builder, Id.Venezuela, Id.Peru);
+            // Brazil -> Hooked to Venezuela
+            AddConnection(builder, Id.Brazil, Id.Peru);
+            AddConnection(builder, Id.Brazil, Id.Argentina);
+            AddConnection(builder, Id.Brazil, Id.NorthAfrica);
+            // Peru: Hooked to Venezuela/Brazil
+            AddConnection(builder, Id.Peru, Id.Argentina);
+            // Argentina: Hooked to all others
+            /* **Europe** */
+            // Iceland -> Hooked to Greenland
+            AddConnection(builder, Id.Iceland, Id.GreatBritain);
+            AddConnection(builder, Id.Iceland, Id.Scandinavia);
+            // Scandinavia -> Hooked to Iceland
+            AddConnection(builder, Id.Scandinavia, Id.Ukraine);
+            AddConnection(builder, Id.Scandinavia, Id.GreatBritain);
+            AddConnection(builder, Id.Scandinavia, Id.NorthernEurope);
+            // Ukraine -> Hooked to Scandinavia
+            AddConnection(builder, Id.Ukraine, Id.NorthernEurope);
+            AddConnection(builder, Id.Ukraine, Id.SouthernEurope);
+            AddConnection(builder, Id.Ukraine, Id.Ural);
+            AddConnection(builder, Id.Ukraine, Id.Afgha);
+            AddConnection(builder, Id.Ukraine, Id.MiddleEast);
+            // Great Britain -> Hooked to Iceland / Scandinavia
+            AddConnection(builder, Id.GreatBritain, Id.NorthernEurope);
+            AddConnection(builder, Id.GreatBritain, Id.WesternEurope);
+            // North Europe -> Hooked to GB, Ukraine, Scandinavia
+            AddConnection(builder, Id.NorthernEurope, Id.SouthernEurope);
+            AddConnection(builder, Id.NorthernEurope, Id.WesternEurope);
+            // Western Europe -> Hooked to GB/Northern Europe
+            AddConnection(builder, Id.WesternEurope, Id.SouthernEurope);
+            AddConnection(builder, Id.WesternEurope, Id.NorthAfrica);
+            // Southern Europe: Connected to all of Europe
+            AddConnection(builder, Id.SouthernEurope, Id.NorthAfrica);
+            AddConnection(builder, Id.SouthernEurope, Id.Egypt);
+            AddConnection(builder, Id.SouthernEurope, Id.MiddleEast);
+            /* **Africa** */
+            // North Africa: Connected to other countries
+            AddConnection(builder, Id.NorthAfrica, Id.Egypt);
+            AddConnection(builder, Id.NorthAfrica, Id.EastAfrica);
+            AddConnection(builder, Id.NorthAfrica, Id.Congo);
+            // Egypt: Connected to NAfrica + Europe
+            AddConnection(builder, Id.Egypt, Id.MiddleEast);
+            AddConnection(builder, Id.Egypt, Id.EastAfrica);
+            // East Africa: Connected to NAfrica / Egypt
+            AddConnection(builder, Id.EastAfrica, Id.MiddleEast);
+            AddConnection(builder, Id.EastAfrica, Id.Congo);
+            AddConnection(builder, Id.EastAfrica, Id.Madagascar);
+            AddConnection(builder, Id.EastAfrica, Id.SouthAfrica);
+            // Congo: Connected to North/East Africa
+            AddConnection(builder, Id.Congo, Id.SouthAfrica);
+            // South Africa: Connected to all mainland Africa
+            AddConnection(builder, Id.SouthAfrica, Id.Madagascar);
+            // Madagascar: Already connected to South/East Africa
+            /* **Asia** */
+            // Ural: Connected to Ukraine already
+            AddConnection(builder, Id.Ural, Id.Siberia);
+            AddConnection(builder, Id.Ural, Id.Afgha);
+            AddConnection(builder, Id.Ural, Id.China);
+            // Siberia: Connected to Ural
+            AddConnection(builder, Id.Siberia, Id.Yakutsk);
+            AddConnection(builder, Id.Siberia, Id.Irkutsk);
+            AddConnection(builder, Id.Siberia, Id.Mongolia);
+            AddConnection(builder, Id.Siberia, Id.China);
+            // Yakutsk: Connected to Siberia
+            AddConnection(builder, Id.Yakutsk, Id.Kamchatka);
+            AddConnection(builder, Id.Yakutsk, Id.Irkutsk);
+            // Kamchatka: Connnected to Yakutsk / Alaska
+            AddConnection(builder, Id.Kamchatka, Id.Irkutsk);
+            AddConnection(builder, Id.Kamchatka, Id.Japan);
+            AddConnection(builder, Id.Kamchatka, Id.Mongolia);
+            // Irkutsk: Connected to Siberia/Yak/Kamchatka
+            AddConnection(builder, Id.Irkutsk, Id.Mongolia);
+            // Mongolia: Connected to Kamchat/Irk/Siberia
+            AddConnection(builder, Id.Mongolia, Id.Japan);
+            AddConnection(builder, Id.Mongolia, Id.China);
+            // Afghanistan: connected to Ukraine
+            AddConnection(builder, Id.Afgha, Id.China);
+            AddConnection(builder, Id.Afgha, Id.India);
+            AddConnection(builder, Id.Afgha, Id.MiddleEast);
+            // China: Connected to Mognolia/Afgha
+            AddConnection(builder, Id.China, Id.India);
+            AddConnection(builder, Id.China, Id.Siam);
+            // Middle East: Connected to Europe/Africa/Afgha
+            AddConnection(builder, Id.MiddleEast, Id.India);
+            // India: Connected to Afgha/China/ME
+            AddConnection(builder, Id.India, Id.Siam);
+            // Siam: Connected to Asia.
+            AddConnection(builder, Id.Siam, Id.Indonesia);
+            /* **Australia** */
+            // Indonesia: Connected to Siam
+            AddConnection(builder, Id.Indonesia, Id.NewGuinea);
+            AddConnection(builder, Id.Indonesia, Id.WesternAustralia);
+            // New Guinea: Connected to Indonesia
+            AddConnection(builder, Id.NewGuinea, Id.EasternAustralia);
+            AddConnection(builder, Id.NewGuinea, Id.WesternAustralia);
+            // Western Australia: Connected to Indonesia/New Guinea
+            AddConnection(builder, Id.WesternAustralia, Id.EasternAustralia);
+            // Eastern Australia connecteed to New Guinea/Westenr Australia already.
+            // All done initialization of connections!
+
             var territories = Enumerable.Range(0, 42).Select(id =>
             {
                 var player = (Player)random.Next(0, 3);
