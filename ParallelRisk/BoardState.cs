@@ -5,35 +5,35 @@ namespace ParallelRisk
 {
     public readonly struct BoardState : IState<Move>
     {
-        private readonly ImmutableArray<Continent> _continents;
-        private readonly ImmutableAdjacencyMatrix _adjacency;
-        private readonly ImmutableArray<Territory> _territories;
+        public ImmutableArray<Continent> Continents { get; }
+        public ImmutableAdjacencyMatrix Adjacency { get; }
+        public ImmutableArray<Territory> Territories { get; }
 
         public BoardState(ImmutableArray<Continent> continents, ImmutableAdjacencyMatrix adjacency, ImmutableArray<Territory> territories, bool maxPlayerTurn)
         {
-            _continents = continents;
-            _adjacency = adjacency;
-            _territories = territories;
+            Continents = continents;
+            Adjacency = adjacency;
+            Territories = territories;
             IsMaxPlayerTurn = maxPlayerTurn;
         }
 
         public BoardState AttackUpdate(in Territory from, in Territory to)
         {
-            var builder = _territories.ToBuilder();
+            var builder = Territories.ToBuilder();
             builder[from.Id] = from;
             builder[to.Id] = to;
-            return new BoardState(_continents, _adjacency, builder.MoveToImmutable(), IsMaxPlayerTurn);
+            return new BoardState(Continents, Adjacency, builder.MoveToImmutable(), IsMaxPlayerTurn);
         }
 
         public BoardState PassTurn()
         {
-            return new BoardState(_continents, _adjacency, _territories, !IsMaxPlayerTurn);
+            return new BoardState(Continents, Adjacency, Territories, !IsMaxPlayerTurn);
         }
 
         public int TotalContinentBonus(Player player)
         {
             int bonus = 0;
-            foreach (Continent continent in _continents)
+            foreach (Continent continent in Continents)
             {
                 if (HasBonus(player, continent))
                     bonus += continent.Bonus;
@@ -45,7 +45,7 @@ namespace ParallelRisk
         {
             foreach(int id in continent.Territories)
             {
-                if (_territories[id].Player != player)
+                if (Territories[id].Player != player)
                     return false;
             }
 
@@ -55,7 +55,7 @@ namespace ParallelRisk
         public int TotalTerritoriesControlled(Player player)
         {
             int count = 0;
-            foreach (Territory territory in _territories)
+            foreach (Territory territory in Territories)
             {
                 if (territory.Player == player)
                     ++count;
@@ -83,15 +83,15 @@ namespace ParallelRisk
         {
             yield return Move.PassTurn(this);
 
-            foreach (Territory from in _territories)
+            foreach (Territory from in Territories)
             {
                 if (IsCurrentPlayer(from.Player))
                 {
-                    foreach (int tid in _adjacency.Adjacent(from.Id))
+                    foreach (int tid in Adjacency.Adjacent(from.Id))
                     {
-                        if (!IsCurrentPlayer(_territories[tid].Player))
+                        if (!IsCurrentPlayer(Territories[tid].Player))
                         {
-                            yield return Move.Attack(this, from, _territories[tid]);
+                            yield return Move.Attack(this, from, Territories[tid]);
                         }
                     }
                 }

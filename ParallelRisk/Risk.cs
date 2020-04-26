@@ -47,7 +47,7 @@ namespace ParallelRisk
             Yakutsk,
             Kamchatka,
             Siberia,
-            Afgha,
+            Afghanistan,
             Ural,
             MiddleEast
         }
@@ -106,7 +106,7 @@ namespace ParallelRisk
                     Id.Yakutsk,
                     Id.Kamchatka,
                     Id.Siberia,
-                    Id.Afgha,
+                    Id.Afghanistan,
                     Id.Ural,
                     Id.MiddleEast))
 
@@ -168,7 +168,7 @@ namespace ParallelRisk
             AddConnection(builder, Id.Ukraine, Id.NorthernEurope);
             AddConnection(builder, Id.Ukraine, Id.SouthernEurope);
             AddConnection(builder, Id.Ukraine, Id.Ural);
-            AddConnection(builder, Id.Ukraine, Id.Afgha);
+            AddConnection(builder, Id.Ukraine, Id.Afghanistan);
             AddConnection(builder, Id.Ukraine, Id.MiddleEast);
             // Great Britain -> Hooked to Iceland / Scandinavia
             AddConnection(builder, Id.GreatBritain, Id.NorthernEurope);
@@ -204,7 +204,7 @@ namespace ParallelRisk
             /* **Asia** */
             // Ural: Connected to Ukraine already
             AddConnection(builder, Id.Ural, Id.Siberia);
-            AddConnection(builder, Id.Ural, Id.Afgha);
+            AddConnection(builder, Id.Ural, Id.Afghanistan);
             AddConnection(builder, Id.Ural, Id.China);
             // Siberia: Connected to Ural
             AddConnection(builder, Id.Siberia, Id.Yakutsk);
@@ -224,9 +224,9 @@ namespace ParallelRisk
             AddConnection(builder, Id.Mongolia, Id.Japan);
             AddConnection(builder, Id.Mongolia, Id.China);
             // Afghanistan: connected to Ukraine
-            AddConnection(builder, Id.Afgha, Id.China);
-            AddConnection(builder, Id.Afgha, Id.India);
-            AddConnection(builder, Id.Afgha, Id.MiddleEast);
+            AddConnection(builder, Id.Afghanistan, Id.China);
+            AddConnection(builder, Id.Afghanistan, Id.India);
+            AddConnection(builder, Id.Afghanistan, Id.MiddleEast);
             // China: Connected to Mognolia/Afgha
             AddConnection(builder, Id.China, Id.India);
             AddConnection(builder, Id.China, Id.Siam);
