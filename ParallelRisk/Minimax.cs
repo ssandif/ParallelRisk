@@ -4,6 +4,29 @@ namespace ParallelRisk
 {
     public static class Minimax
     {
+        public static TMove SerialMove<TState, TMove>(TState node, int depth)
+            where TState : IState<TMove>
+            where TMove : IMove<TState>
+        {
+            // this should be returned at the end of the minimax player's turn
+            if (depth == 0 || node.IsTerminal() || !node.IsMaxPlayerTurn)
+                return default;
+                
+            if (node.IsMaxPlayerTurn)
+            {
+                (TMove Move, double Utility) value = (default, double.PositiveInfinity);
+                foreach (TMove move in node.Moves())
+                {
+                    double newUtil = SerialEstimatedOutcome<TState, TMove>(move, depth);
+                    if (newUtil < value.Utility)
+                        value = (move, newUtil);
+                }
+                return value.Move;
+            }
+
+            
+        }
+
         public static TMove Serial<TState, TMove>(TState node, int depth)
             where TState : IState<TMove>
             where TMove : IMove<TState>

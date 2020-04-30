@@ -98,6 +98,36 @@ namespace ParallelRisk
             }
         }
 
+        public IEnumerable<Move> ReinforceMoves() {
+            yield return Move.PassTurn(this);
+            List<Territory> fromT = new List<Territories>();
+
+             // build an expanded list of all potential move options
+            foreach (Territory from in Territories) {
+                if (IsCurrentPlayer(from.Player) && from.TroopCount > 1) {
+                    foreach (int tid in Adjacency.Adjacent(from.Id)) {
+                        if (!fromT.Contains(Territories[tid]) && IsCurrentPlayer(Territories[tid].Player)) {
+                            fromT.Add(Territories[tid]);
+                        }
+                    }
+                }
+            }
+
+            foreach (Territory ft in fromT) {
+                List<Territory> toT = new List<Territories>();
+                foreach (int tid in Adjacency.Adjacent(ft.Id)) {
+                    if (IsCurrentPlayer(Territories[tid].Player)) {
+                        // can optimize to only search if edge territory, but would be hard
+                        // without optimizations in other parts of code to determine 'safe' territories
+                        toT.Add(Territories[tid]);
+                    }
+                }
+                foreach (Territory to in toT) {
+                    yield return Move.ChangeTroops(this, ft, to, ft.TroopCount - 1);
+                }
+            }
+        }
+
         private bool IsCurrentPlayer(Player player)
         {
             return (IsMaxPlayerTurn && player == Player.Max) || (!IsMaxPlayerTurn && player == Player.Min);

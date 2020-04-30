@@ -254,6 +254,8 @@ namespace ParallelRisk
                 int troopCount = random.Next(1, 11);
                 return new Territory(id, player, troopCount);
             }).ToList();
+
+            
             return new BoardState(continents, builder.MoveToImmutable(), ImmutableArray.CreateRange(territories), true);
         }
 
