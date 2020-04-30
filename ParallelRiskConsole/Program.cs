@@ -7,7 +7,11 @@ namespace ParallelRiskConsole
     {
         static void Main(string[] args)
         {
-            const int MaxDepth = 10;
+            int MaxDepth = 10;
+            if (args.Length > 0) {
+                int potentialDepth = Int32.Parse(args[0]);
+                if (potentialDepth > 0) MaxDepth = potentialDepth; 
+            }
             BoardState board = Risk.StandardBoard();
             Move move = Minimax.Serial<BoardState, Move>(board, MaxDepth);
 
