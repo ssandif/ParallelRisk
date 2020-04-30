@@ -8,5 +8,7 @@ namespace ParallelRisk
         bool IsTerminal();
         bool IsMaxPlayerTurn { get; }
         IEnumerable<TMove> Moves();
+        // Not really sure how else to add it
+        IEnumerable<TMove> ReinforceMoves();
     }
 }
