@@ -65,6 +65,7 @@ namespace ParallelRisk
 
         public double Heuristic()
         {
+            // note: this is the 'continent bonus' multiplier
             const double C = 1;
             double value = 0;
             value += TotalTerritoriesControlled(Player.Max) - TotalTerritoriesControlled(Player.Min);
@@ -115,17 +116,26 @@ namespace ParallelRisk
 
             foreach (Territory ft in fromT) {
                 List<Territory> toT = new List<Territories>();
-                foreach (int tid in Adjacency.Adjacent(ft.Id)) {
-                    if (IsCurrentPlayer(Territories[tid].Player)) {
-                        // can optimize to only search if edge territory, but would be hard
-                        // without optimizations in other parts of code to determine 'safe' territories
-                        toT.Add(Territories[tid]);
-                    }
-                }
+                AddAdjacentToList(toT, ft.tid);
                 foreach (Territory to in toT) {
                     yield return Move.ChangeTroops(this, ft, to, ft.TroopCount - 1);
                 }
             }
+        }
+
+        private void AddAdjacentToList(List<Territories> to, int tid) {
+            foreach (int tid2 in Adjacency.Adjacent(tid)) {
+                if (IsCurrentPlayer(Territories[tid2].Player) && !to.Contains(Territories[tid2])) {
+                        // can optimize to only search if edge territory, but would be hard
+                        // without optimizations in other parts of code to determine 'safe' territories
+                        to.Add(Territories[tid2]);
+                        // should check adjacent of these as well and add them, recursively...
+                        // this gets *every* adjacent territory, but will stop if all of them are added
+                        // it's basically depth first search
+                        AddAdjacentToList(to, tid2);
+                    }
+            }
+            return;
         }
 
         private bool IsCurrentPlayer(Player player)
