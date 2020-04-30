@@ -101,7 +101,7 @@ namespace ParallelRisk
 
         public IEnumerable<Move> ReinforceMoves() {
             yield return Move.PassTurn(this);
-            List<Territory> fromT = new List<Territories>();
+            List<Territory> fromT = new List<Territory>();
 
              // build an expanded list of all potential move options
             foreach (Territory from in Territories) {
@@ -115,15 +115,15 @@ namespace ParallelRisk
             }
 
             foreach (Territory ft in fromT) {
-                List<Territory> toT = new List<Territories>();
-                AddAdjacentToList(toT, ft.tid);
+                List<Territory> toT = new List<Territory>();
+                AddAdjacentToList(toT, ft.Id);
                 foreach (Territory to in toT) {
                     yield return Move.ChangeTroops(this, ft, to, ft.TroopCount - 1);
                 }
             }
         }
 
-        private void AddAdjacentToList(List<Territories> to, int tid) {
+        private void AddAdjacentToList(List<Territory> to, int tid) {
             foreach (int tid2 in Adjacency.Adjacent(tid)) {
                 if (IsCurrentPlayer(Territories[tid2].Player) && !to.Contains(Territories[tid2])) {
                         // can optimize to only search if edge territory, but would be hard

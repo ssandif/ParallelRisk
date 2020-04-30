@@ -11,11 +11,11 @@ namespace ParallelRisk
             // this should be returned at the end of the minimax player's turn
             if (depth == 0 || node.IsTerminal() || !node.IsMaxPlayerTurn)
                 return default;
-                
+
             if (node.IsMaxPlayerTurn)
             {
                 (TMove Move, double Utility) value = (default, double.PositiveInfinity);
-                foreach (TMove move in node.Moves())
+                foreach (TMove move in node.ReinforceMoves())
                 {
                     double newUtil = SerialEstimatedOutcome<TState, TMove>(move, depth);
                     if (newUtil < value.Utility)
@@ -24,7 +24,7 @@ namespace ParallelRisk
                 return value.Move;
             }
 
-            
+            return default;
         }
 
         public static TMove Serial<TState, TMove>(TState node, int depth)

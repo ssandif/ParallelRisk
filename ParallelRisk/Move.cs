@@ -20,7 +20,7 @@ namespace ParallelRisk
         }
 
         public static Move ChangeTroops(in BoardState state, in Territory from, in Territory to, int change) {
-            return new Move (state, from.ModifyTroops(-change), to.modifyTroops(change), false);
+            return new Move (state, from.ModifyTroops(-change), to.ModifyTroops(change), false);
         }
 
         private Move(in BoardState state, in Territory from, in Territory to, bool passTurn)
