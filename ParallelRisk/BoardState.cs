@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using static System.Math;
 
 namespace ParallelRisk
 {
@@ -25,9 +27,17 @@ namespace ParallelRisk
             return new BoardState(Continents, Adjacency, builder.MoveToImmutable(), IsMaxPlayerTurn);
         }
 
-        public BoardState PassTurn()
+        public BoardState Pass()
         {
             return new BoardState(Continents, Adjacency, Territories, !IsMaxPlayerTurn);
+        }
+
+        public BoardState PassAndFortify(int fromId, int toId, int fortifyCount)
+        {
+            var builder = Territories.ToBuilder();
+            builder[fromId] = builder[fromId].ModifyTroops(-fortifyCount);
+            builder[toId] = builder[toId].ModifyTroops(fortifyCount);
+            return new BoardState(Continents, Adjacency, builder.MoveToImmutable(), !IsMaxPlayerTurn);
         }
 
         public int TotalContinentBonus(Player player)
@@ -43,7 +53,7 @@ namespace ParallelRisk
 
         public bool HasBonus(Player player, in Continent continent)
         {
-            foreach(int id in continent.Territories)
+            foreach (int id in continent.Territories)
             {
                 if (Territories[id].Player != player)
                     return false;
@@ -73,6 +83,29 @@ namespace ParallelRisk
             return value;
         }
 
+        public int OptimalOccupyingTroops(int fromId, int toId, int attackers)
+        {
+            int available = Territories[fromId].TroopCount - 1;
+            Player attacker = Territories[fromId].Player;
+            // Subtract 1 for the territory you're about to occupy
+            int fromAttacks = TotalAttackableTerritories(fromId, attacker) - 1;
+            int toAttacks = TotalAttackableTerritories(toId, attacker);
+            double ratio = (double)toAttacks / (fromAttacks + toAttacks);
+            int optimal = (int)Round(available * ratio, MidpointRounding.AwayFromZero);
+            return Min(attackers, optimal);
+        }
+
+        public int TotalAttackableTerritories(int territoryId, Player attacker)
+        {
+            int count = 0;
+            foreach (int tid in Adjacency.Adjacent(territoryId))
+            {
+                if (Territories[tid].Player != attacker)
+                    ++count;
+            }
+            return count;
+        }
+
         public bool IsTerminal()
         {
             return TotalTerritoriesControlled(Player.Max) == 0 || TotalTerritoriesControlled(Player.Min) == 0;
@@ -82,7 +115,12 @@ namespace ParallelRisk
 
         public IEnumerable<Move> Moves()
         {
-            yield return Move.PassTurn(this);
+            yield return Move.Pass(this);
+
+            foreach (Move move in ReinforceMoves())
+            {
+                yield return move;
+            }
 
             foreach (Territory from in Territories)
             {
@@ -92,48 +130,57 @@ namespace ParallelRisk
                     {
                         if (!IsCurrentPlayer(Territories[tid].Player))
                         {
-                            yield return Move.Attack(this, from, Territories[tid]);
+                            yield return Move.Attack(this, from.Id, tid);
                         }
                     }
                 }
             }
         }
 
-        public IEnumerable<Move> ReinforceMoves() {
-            yield return Move.PassTurn(this);
-            List<Territory> fromT = new List<Territory>();
+        private IEnumerable<Move> ReinforceMoves()
+        {
+            var fromT = new List<Territory>();
 
-             // build an expanded list of all potential move options
-            foreach (Territory from in Territories) {
-                if (IsCurrentPlayer(from.Player) && from.TroopCount > 1) {
-                    foreach (int tid in Adjacency.Adjacent(from.Id)) {
-                        if (!fromT.Contains(Territories[tid]) && IsCurrentPlayer(Territories[tid].Player)) {
+            // build an expanded list of all potential move options
+            foreach (Territory from in Territories)
+            {
+                if (IsCurrentPlayer(from.Player) && from.TroopCount > 1)
+                {
+                    foreach (int tid in Adjacency.Adjacent(from.Id))
+                    {
+                        if (!fromT.Contains(Territories[tid]) && IsCurrentPlayer(Territories[tid].Player))
+                        {
                             fromT.Add(Territories[tid]);
                         }
                     }
                 }
             }
 
-            foreach (Territory ft in fromT) {
-                List<Territory> toT = new List<Territory>();
+            foreach (Territory ft in fromT)
+            {
+                var toT = new List<Territory>();
                 AddAdjacentToList(toT, ft.Id);
-                foreach (Territory to in toT) {
-                    yield return Move.ChangeTroops(this, ft, to, ft.TroopCount - 1);
+                foreach (Territory to in toT)
+                {
+                    yield return Move.PassAndFortify(this, ft.Id, to.Id, ft.TroopCount - 1);
                 }
             }
         }
 
-        private void AddAdjacentToList(List<Territory> to, int tid) {
-            foreach (int tid2 in Adjacency.Adjacent(tid)) {
-                if (IsCurrentPlayer(Territories[tid2].Player) && !to.Contains(Territories[tid2])) {
-                        // can optimize to only search if edge territory, but would be hard
-                        // without optimizations in other parts of code to determine 'safe' territories
-                        to.Add(Territories[tid2]);
-                        // should check adjacent of these as well and add them, recursively...
-                        // this gets *every* adjacent territory, but will stop if all of them are added
-                        // it's basically depth first search
-                        AddAdjacentToList(to, tid2);
-                    }
+        private void AddAdjacentToList(List<Territory> to, int tid)
+        {
+            foreach (int tid2 in Adjacency.Adjacent(tid))
+            {
+                if (IsCurrentPlayer(Territories[tid2].Player) && !to.Contains(Territories[tid2]))
+                {
+                    // can optimize to only search if edge territory, but would be hard
+                    // without optimizations in other parts of code to determine 'safe' territories
+                    to.Add(Territories[tid2]);
+                    // should check adjacent of these as well and add them, recursively...
+                    // this gets *every* adjacent territory, but will stop if all of them are added
+                    // it's basically depth first search
+                    AddAdjacentToList(to, tid2);
+                }
             }
             return;
         }
