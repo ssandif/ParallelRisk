@@ -14,6 +14,7 @@ namespace ParallelRisk
 
             if (node.IsMaxPlayerTurn)
             {
+                //System.Console.WriteLine("Attempting move");   
                 (TMove Move, double Utility) value = (default, double.PositiveInfinity);
                 foreach (TMove move in node.ReinforceMoves())
                 {
@@ -22,9 +23,11 @@ namespace ParallelRisk
                         value = (move, newUtil);
                 }
                 return value.Move;
+            } else {
+                throw new System.InvalidOperationException("Should call SerialMove on AI turn");
             }
 
-            return default;
+            //return default;
         }
 
         public static TMove Serial<TState, TMove>(TState node, int depth)

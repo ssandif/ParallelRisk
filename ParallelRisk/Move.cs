@@ -7,86 +7,111 @@ namespace ParallelRisk
         private readonly BoardState _state;
         public readonly Territory From { get; }
         public readonly Territory To { get; }
-        public readonly bool IsAttack { get; }
+        public enum MoveType { Attack, Reinforce, Pass }
+        public readonly MoveType Action { get; }
+
+        
 
         public static Move PassTurn(in BoardState state)
         {
-            return new Move(state, default, default, false);
+            return new Move(state, default, default, MoveType.Pass);
         }
 
         public static Move Attack(in BoardState state, in Territory from, in Territory to)
         {
-            return new Move(state, from, to, true);
+            return new Move(state, from, to, MoveType.Attack);
         }
 
         public static Move ChangeTroops(in BoardState state, in Territory from, in Territory to, int change) {
-            return new Move (state, from.ModifyTroops(-change), to.ModifyTroops(change), false);
+            return new Move (state, from.ModifyTroops(-change), to.ModifyTroops(change), MoveType.Reinforce);
         }
 
-        private Move(in BoardState state, in Territory from, in Territory to, bool passTurn)
+        private Move(in BoardState state, in Territory from, in Territory to, MoveType act)
         {
             _state = state;
             From = from;
             To = to;
-            IsAttack = passTurn;
+            Action = act;
         }
 
         public IEnumerable<(double, BoardState)> Outcomes()
         {
-            if (!IsAttack)
+            if (Action == MoveType.Pass)
             {
                 yield return (1, _state.PassTurn());
                 yield break;
             }
 
-            // From is 1+unit count
-            // probabilities http://datagenetics.com/blog/november22011/index.html
-            if (From.TroopCount == 2)
-            {
-                // 1 attacker vs defense
-                if (To.TroopCount == 1) {
-                    // Attack wins
-                    yield return (41.67, _state.AttackUpdate(From.ModifyTroops(-1), To.ChangeControl(From.Player, 1)));
-                    // Defense wins
-                    yield return (58.33, _state.AttackUpdate(From.ModifyTroops(-1), To));
-                } else if (To.TroopCount == 2) {
-                    // Attack wins
-                    yield return (25.46, _state.AttackUpdate(From.ModifyTroops(-1), To.ChangeControl(From.Player, 1)));
-                    // Defense wins
-                    yield return (74.33, _state.AttackUpdate(From.ModifyTroops(-1), To));
-                }
-            } else if (From.TroopCount == 3) {
-                // 2 attackers vs defense
-                if (To.TroopCount == 2) {
-                    // 2-0 Attack Win
-                    yield return (22.76, _state.AttackUpdate(From.ModifyTroops(-2), To.ChangeControl(From.Player, 2)));
-                    // Draw
-                    yield return (32.41, _state.AttackUpdate(From.ModifyTroops(-1), To.ModifyTroops(-1)));
-                    // 2-0 Defense Win
-                    yield return (44.83, _state.AttackUpdate(From.ModifyTroops(-2), To));
-                } else if (To.TroopCount == 1) {
-                    // 2-0 Attack Win
-                    yield return (57.87, _state.AttackUpdate(From.ModifyTroops(-2), To.ChangeControl(From.Player, 2)));
-                    // Defense wins 1
-                    yield return (42.13, _state.AttackUpdate(From.ModifyTroops(-1), To));
-                }
-            } else if (From.TroopCount >= 4) {
-                // 3+ versus defense
-                if (To.TroopCount == 1) {
-                    // Attack wins
-                    yield return (65.97, _state.AttackUpdate(From.ModifyTroops(-3), To.ChangeControl(From.Player, 3)));
-                    // Defense wins
-                    yield return (34.03, _state.AttackUpdate(From.ModifyTroops(-1), To));
-                } else if (To.TroopCount == 2) {
-                    // 2-0 Attack Win
-                    yield return (37.17, _state.AttackUpdate(From.ModifyTroops(-3), To.ChangeControl(From.Player, 3)));
-                    // Draw
-                    yield return (29.26, _state.AttackUpdate(From.ModifyTroops(-1), To.ModifyTroops(-1)));
-                    // 2-0 Defense Win
-                    yield return (33.58, _state.AttackUpdate(From.ModifyTroops(-2), To));
-                }
+            else if (Action == MoveType.Reinforce) {
+                // ChangeTroops modifies from and to already
+                yield return (1, _state.ReinforceUpdate(From, To));
+                yield break;
             }
 
+            else if (Action == MoveType.Attack) {
+                 // From is 1+unit count
+                // probabilities http://datagenetics.com/blog/november22011/index.html
+                if (From.TroopCount == 2)
+                {
+                    // 1 attacker vs defense
+                    if (To.TroopCount == 1) {
+                        // Attack wins
+                        yield return (41.67, _state.AttackUpdate(From.ModifyTroops(-1), To.ChangeControl(From.Player, 1)));
+                        // Defense wins
+                        yield return (58.33, _state.AttackUpdate(From.ModifyTroops(-1), To));
+                    } else if (To.TroopCount >= 2) {
+                        // Attack wins
+                        yield return (25.46, _state.AttackUpdate(From.ModifyTroops(-1), To.ModifyTroops(-1)));
+                        // Defense wins
+                        yield return (74.33, _state.AttackUpdate(From.ModifyTroops(-1), To));
+                    }
+                } else if (From.TroopCount == 3) {
+                    // 2 attackers vs defense
+                    if (To.TroopCount == 2) {
+                        // 2-0 Attack Win
+                        yield return (22.76, _state.AttackUpdate(From.ModifyTroops(-2), To.ChangeControl(From.Player, 2)));
+                        // Draw
+                        yield return (32.41, _state.AttackUpdate(From.ModifyTroops(-1), To.ModifyTroops(-1)));
+                        // 2-0 Defense Win
+                        yield return (44.83, _state.AttackUpdate(From.ModifyTroops(-2), To));
+                    } else if (To.TroopCount == 1) {
+                        // 2-0 Attack Win
+                        yield return (57.87, _state.AttackUpdate(From.ModifyTroops(-2), To.ChangeControl(From.Player, 2)));
+                        // Defense wins 1
+                        yield return (42.13, _state.AttackUpdate(From.ModifyTroops(-1), To));
+                    } else if (To.TroopCount >= 3) {
+                        // 2-0 Attack Win
+                        yield return (22.76, _state.AttackUpdate(From.ModifyTroops(-2), To.ModifyTroops(-2)));
+                        // Draw
+                        yield return (32.41, _state.AttackUpdate(From.ModifyTroops(-1), To.ModifyTroops(-1)));
+                        // 2-0 Defense Win
+                        yield return (44.83, _state.AttackUpdate(From.ModifyTroops(-2), To));
+                    }
+                } else if (From.TroopCount >= 4) {
+                    // 3+ versus defense
+                    if (To.TroopCount == 1) {
+                        // Attack wins
+                        yield return (65.97, _state.AttackUpdate(From.ModifyTroops(-3), To.ChangeControl(From.Player, 3)));
+                        // Defense wins
+                        yield return (34.03, _state.AttackUpdate(From.ModifyTroops(-1), To));
+                    } else if (To.TroopCount == 2) {
+                        // 2-0 Attack Win
+                        yield return (37.17, _state.AttackUpdate(From.ModifyTroops(-3), To.ChangeControl(From.Player, 3)));
+                        // Draw
+                        yield return (29.26, _state.AttackUpdate(From.ModifyTroops(-1), To.ModifyTroops(-1)));
+                        // 2-0 Defense Win
+                        yield return (33.58, _state.AttackUpdate(From.ModifyTroops(-2), To));
+                    } else if (To.TroopCount >= 3) {
+                        // 2-0 Attack Win
+                        yield return (37.17, _state.AttackUpdate(From.ModifyTroops(-3), To.ModifyTroops(-2)));
+                        // Draw
+                        yield return (29.26, _state.AttackUpdate(From.ModifyTroops(-1), To.ModifyTroops(-1)));
+                        // 2-0 Defense Win
+                        yield return (33.58, _state.AttackUpdate(From.ModifyTroops(-2), To));
+                    }
+                }
+                yield break;
+            }
         }
     }
 }

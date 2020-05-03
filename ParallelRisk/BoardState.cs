@@ -17,12 +17,21 @@ namespace ParallelRisk
             IsMaxPlayerTurn = maxPlayerTurn;
         }
 
+        // these two are the same, just different incase some work needs to be done on them
         public BoardState AttackUpdate(in Territory from, in Territory to)
         {
             var builder = Territories.ToBuilder();
             builder[from.Id] = from;
             builder[to.Id] = to;
             return new BoardState(Continents, Adjacency, builder.MoveToImmutable(), IsMaxPlayerTurn);
+        }
+
+        public BoardState ReinforceUpdate(in Territory from, in Territory to)
+        {
+            var builder = Territories.ToBuilder();
+            builder[from.Id] = from;
+            builder[to.Id] = to;
+            return new BoardState(Continents, Adjacency, builder.MoveToImmutable(), !IsMaxPlayerTurn);
         }
 
         public BoardState PassTurn()
@@ -118,6 +127,9 @@ namespace ParallelRisk
                 List<Territory> toT = new List<Territory>();
                 AddAdjacentToList(toT, ft.Id);
                 foreach (Territory to in toT) {
+                    if (ft.Id == to.Id) {
+                        continue;
+                    }
                     yield return Move.ChangeTroops(this, ft, to, ft.TroopCount - 1);
                 }
             }
