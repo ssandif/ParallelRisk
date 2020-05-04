@@ -15,7 +15,7 @@ namespace ParallelRiskConsole
             [Option('a', "alphabeta", Required = false, Default = false, HelpText = "Whether or not to use alpha-beta pruning.")]
             public bool AlphaBeta { get; set; }
 
-            [Option('p', "parallel", Required = false, Default = false, HelpText = "Use the MPI-enabled version of the algorithm.")]
+            [Option('P', "parallel", Required = false, Default = false, HelpText = "Use the MPI-enabled version of the algorithm.")]
             public bool Parallel { get; set; }
 
             [Option('t', "time", Required = false, Default = false, HelpText = "Times the program runtime.")]
@@ -41,9 +41,9 @@ namespace ParallelRiskConsole
 
             Move move = (options.AlphaBeta, options.Parallel) switch
             {
-                (true, true) => throw new NotImplementedException(),
+                (true, true) => AlphaBeta.Parallel<BoardState, Move>(board, options.MaxDepth),
                 (true, false) => AlphaBeta.Serial<BoardState, Move>(board, options.MaxDepth),
-                (false, true) => throw new NotImplementedException(),
+                (false, true) => Minimax.Parallel<BoardState, Move>(board, options.MaxDepth),
                 (false, false) => Minimax.Serial<BoardState, Move>(board, options.MaxDepth)
             };
 
