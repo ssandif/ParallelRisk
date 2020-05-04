@@ -5,6 +5,6 @@ namespace ParallelRisk
 {
     public interface IMove<TState>
     {
-        IEnumerable<(double, TState)> Outcomes();
+        IEnumerable<(double Probability, TState Outcome)> Outcomes();
     }
 }

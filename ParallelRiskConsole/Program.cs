@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using CommandLine;
 using ParallelRisk;
 
@@ -32,6 +33,7 @@ namespace ParallelRiskConsole
             Stopwatch stopwatch = null;
 
             BoardState board = Risk.StandardBoard();
+            var pool = new ControlledThreadPool(32);
 
             if (options.Time)
             {
@@ -41,9 +43,9 @@ namespace ParallelRiskConsole
 
             Move move = (options.AlphaBeta, options.Parallel) switch
             {
-                (true, true) => throw new NotImplementedException(),
+                (true, true) => AlphaBeta.ParallelYbw<BoardState, Move>(board, options.MaxDepth, pool),
                 (true, false) => AlphaBeta.Serial<BoardState, Move>(board, options.MaxDepth),
-                (false, true) => throw new NotImplementedException(),
+                (false, true) => Minimax.ParallelYbw<BoardState, Move>(board, options.MaxDepth, pool),
                 (false, false) => Minimax.Serial<BoardState, Move>(board, options.MaxDepth)
             };
 

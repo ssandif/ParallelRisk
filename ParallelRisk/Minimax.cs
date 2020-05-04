@@ -1,9 +1,87 @@
-﻿using static System.Math;
+﻿using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using static System.Math;
 
 namespace ParallelRisk
 {
     public static class Minimax
     {
+        public static TMove ParallelYbw<TState, TMove>(TState node, int depth, ControlledThreadPool pool)
+            where TState : IState<TMove>
+            where TMove : IMove<TState>
+        {
+            if (depth == 0 || node.IsTerminal())
+                return default;
+
+            if (node.IsMaxPlayerTurn)
+            {
+                TMove firstMove = node.Moves().First();
+                double firstValue = ParallelYbwEstimatedOutcome<TState, TMove>(firstMove, depth, pool);
+                (TMove restMove, double restUtility) = Task.WhenAll(node.Moves()
+                    .Skip(1)
+                    .Select(move => pool.TryRun(() => (Move: move, Utility: ParallelYbwEstimatedOutcome<TState, TMove>(move, depth, pool)))))
+                    .Result
+                    .Aggregate((x, y) => x.Utility > y.Utility ? x : y);
+                return firstValue > restUtility ? firstMove : restMove;
+            }
+            else
+            {
+                TMove firstMove = node.Moves().First();
+                double firstValue = ParallelYbwEstimatedOutcome<TState, TMove>(firstMove, depth, pool);
+                (TMove restMove, double restUtility) = Task.WhenAll(node.Moves()
+                    .Skip(1)
+                    .Select(move => pool.TryRun(() => (Move: move, Utility: ParallelYbwEstimatedOutcome<TState, TMove>(move, depth, pool)))))
+                    .Result
+                    .Aggregate((x, y) => x.Utility < y.Utility ? x : y);
+                return firstValue < restUtility ? firstMove : restMove;
+            }
+        }
+
+        private static double ParallelYbwMinimax<TState, TMove>(TState node, int depth, ControlledThreadPool pool)
+            where TState : IState<TMove>
+            where TMove : IMove<TState>
+        {
+            if (depth == 0 || node.IsTerminal())
+                return node.Heuristic();
+
+            if (node.IsMaxPlayerTurn)
+            {
+                double first = ParallelYbwEstimatedOutcome<TState, TMove>(node.Moves().First(), depth, pool);
+                double rest = Task.WhenAll(node.Moves()
+                    .Skip(1)
+                    .Select(move => pool.TryRun(() => ParallelYbwEstimatedOutcome<TState, TMove>(move, depth, pool))))
+                    .Result
+                    .Max();
+                return Max(first, rest);
+            }
+            else
+            {
+                double first = ParallelYbwEstimatedOutcome<TState, TMove>(node.Moves().First(), depth, pool);
+                double rest = Task.WhenAll(node.Moves()
+                    .Skip(1)
+                    .Select(move => pool.TryRun(() => ParallelYbwEstimatedOutcome<TState, TMove>(move, depth, pool))))
+                    .Result
+                    .Min();
+                return Min(first, rest);
+            }
+        }
+
+        private static double ParallelYbwEstimatedOutcome<TState, TMove>(TMove node, int depth, ControlledThreadPool pool)
+            where TState : IState<TMove>
+            where TMove : IMove<TState>
+        {
+            (double probability, TState outcome) = node.Outcomes().First();
+            double value = probability * ParallelYbwMinimax<TState, TMove>(outcome, depth - 1, pool);
+            ThreadPool.GetAvailableThreads(out int workerThreads, out _);
+            value += Task.WhenAll(node.Outcomes()
+                .Skip(1)
+                .Select(o => pool.TryRun(() => o.Probability * ParallelYbwMinimax<TState, TMove>(o.Outcome, depth - 1, pool))))
+                .Result
+                .Sum();
+            return value;
+        }
+
         public static TMove Serial<TState, TMove>(TState node, int depth)
             where TState : IState<TMove>
             where TMove : IMove<TState>

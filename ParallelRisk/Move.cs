@@ -34,7 +34,7 @@ namespace ParallelRisk
             IsAttack = isAttack;
         }
 
-        public IEnumerable<(double, BoardState)> Outcomes()
+        public IEnumerable<(double Probability, BoardState Outcome)> Outcomes()
         {
             //if (Action == MoveType.Pass)
             if (!IsAttack)
