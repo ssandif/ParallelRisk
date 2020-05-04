@@ -1,5 +1,10 @@
-﻿using System.Linq;
-using static System.Math;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+﻿using static System.Math;
+
 
 namespace ParallelRisk
 {
@@ -48,7 +53,6 @@ namespace ParallelRisk
                 return value.Move;
             }
         }
-
         private static double ParallelYbwAlphaBeta<TState, TMove>(TState node, int depth, double alpha, double beta, ControlledThreadPool pool)
             where TState : IState<TMove>
             where TMove : IMove<TState>
@@ -92,6 +96,64 @@ namespace ParallelRisk
                 .AsParallel()
                 .Select(o => o.Probability * ParallelYbwAlphaBeta<TState, TMove>(o.Outcome, depth - 1, alpha, beta, pool))
                 .Sum();
+        }
+
+                public static TMove Parallel<TState, TMove>(TState node, int depth)
+            where TState : IState<TMove>
+            where TMove : IMove<TState>
+        => Parallel<TState, TMove>(node, depth, double.NegativeInfinity, double.PositiveInfinity);
+
+        private static TMove Parallel<TState, TMove>(TState node, int depth, double alpha, double beta)
+            where TState : IState<TMove>
+            where TMove : IMove<TState>
+        {
+            if (depth == 0 || node.IsTerminal())
+                return default;
+
+            var taskList = new List<Task>();
+            int i = 0;
+            if (node.IsMaxPlayerTurn)
+            {
+                (TMove Move, double Utility) value = (default, double.NegativeInfinity);
+                foreach (TMove move in node.Moves())
+                {
+                    i++;
+                    taskList.Add( Task.Run(() => {
+                        double newUtil = SerialEstimatedOutcome<TState, TMove>(move, depth, alpha, beta);
+                        if (newUtil > value.Utility)
+                            value = (move, newUtil);
+
+                        alpha = Max(alpha, value.Utility);
+                        // Need to fix this somehow
+                        //if (alpha >= beta)
+                        //    break;
+                    }));
+                }
+                Console.WriteLine($"Added {i} processes.");
+                Task.WaitAll(taskList.ToArray());
+                return value.Move;
+            }
+            else
+            {
+                (TMove Move, double Utility) value = (default, double.PositiveInfinity);
+                foreach (TMove move in node.Moves())
+                {
+                    i++;
+                    taskList.Add( Task.Run(() => {
+                        double newUtil = SerialEstimatedOutcome<TState, TMove>(move, depth, alpha, beta);
+                        if (newUtil < value.Utility)
+                            value = (move, newUtil);
+
+                        beta = Min(beta, value.Utility);
+                        // How to fix this...
+                        //if (alpha >= beta)
+                        //    break;
+                    }));
+                }
+                Console.WriteLine($"Added {i} processes.");
+                Task.WaitAll(taskList.ToArray());
+                return value.Move;
+            }
         }
 
         public static TMove Serial<TState, TMove>(TState node, int depth)

@@ -1,7 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.Math;
+
 
 namespace ParallelRisk
 {
@@ -84,8 +87,7 @@ namespace ParallelRisk
 
         public static TMove Serial<TState, TMove>(TState node, int depth)
             where TState : IState<TMove>
-            where TMove : IMove<TState>
-        {
+            where TMove : IMove<TState> {
             if (depth == 0 || node.IsTerminal())
                 return default;
 
@@ -111,6 +113,53 @@ namespace ParallelRisk
                 }
                 return value.Move;
             }
+
+        }
+        
+        public static TMove Parallel<TState, TMove>(TState node, int depth)
+            where TState : IState<TMove>
+            where TMove : IMove<TState>
+        {
+            if (depth == 0 || node.IsTerminal())
+                return default;
+
+            List<Task> taskList = new List<Task>();
+            int i = 0;
+            if (node.IsMaxPlayerTurn)
+            {
+                
+                (TMove Move, double Utility) value = (default, double.NegativeInfinity);
+                foreach (TMove move in node.Moves())
+                {
+                    i++;
+                    taskList.Add( Task.Run(() => {
+                        double newUtil = SerialEstimatedOutcome<TState, TMove>(move, depth);
+                        if (newUtil > value.Utility)
+                            value = (move, newUtil);
+                    }));
+                }
+                Console.WriteLine($"Added {i} processes.");
+                Task.WaitAll(taskList.ToArray());
+                return value.Move;
+
+            }
+            else
+            {
+                (TMove Move, double Utility) value = (default, double.PositiveInfinity);
+                foreach (TMove move in node.Moves())
+                {
+                    i++;
+                    taskList.Add( Task.Run(() => {
+                        double newUtil = SerialEstimatedOutcome<TState, TMove>(move, depth);
+                        if (newUtil < value.Utility)
+                            value = (move, newUtil);
+                    }));
+                }
+                Console.WriteLine($"Added {i} processes.");
+                Task.WaitAll(taskList.ToArray());
+                return value.Move;
+            }
+            
         }
 
         private static double SerialMinimax<TState, TMove>(TState node, int depth)
