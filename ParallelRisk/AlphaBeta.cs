@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-﻿using static System.Math;
+using static System.Math;
 
 
 namespace ParallelRisk
@@ -98,7 +98,7 @@ namespace ParallelRisk
                 .Sum();
         }
 
-                public static TMove Parallel<TState, TMove>(TState node, int depth)
+        public static TMove Parallel<TState, TMove>(TState node, int depth)
             where TState : IState<TMove>
             where TMove : IMove<TState>
         => Parallel<TState, TMove>(node, depth, double.NegativeInfinity, double.PositiveInfinity);
@@ -118,7 +118,8 @@ namespace ParallelRisk
                 foreach (TMove move in node.Moves())
                 {
                     i++;
-                    taskList.Add( Task.Run(() => {
+                    taskList.Add(Task.Run(() =>
+                    {
                         double newUtil = SerialEstimatedOutcome<TState, TMove>(move, depth, alpha, beta);
                         if (newUtil > value.Utility)
                             value = (move, newUtil);
@@ -139,7 +140,8 @@ namespace ParallelRisk
                 foreach (TMove move in node.Moves())
                 {
                     i++;
-                    taskList.Add( Task.Run(() => {
+                    taskList.Add(Task.Run(() =>
+                    {
                         double newUtil = SerialEstimatedOutcome<TState, TMove>(move, depth, alpha, beta);
                         if (newUtil < value.Utility)
                             value = (move, newUtil);
