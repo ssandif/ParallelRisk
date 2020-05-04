@@ -57,9 +57,9 @@ namespace ParallelRisk
             return ImmutableArray.CreateRange(ids.Select(x => (int)x));
         }
 
-        public static BoardState StandardBoard()
+        public static BoardState StandardBoard(int? seed = null)
         {
-            var random = new Random(0);
+            var random = seed == null ? new Random() : new Random(seed.GetValueOrDefault());
             var continents = ImmutableArray.Create(
                 new Continent("North America", 5, Territories(
                     Id.Alaska,

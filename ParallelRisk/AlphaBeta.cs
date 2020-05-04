@@ -446,12 +446,22 @@ namespace ParallelRisk
                     }
                 }
 
-                try
+                while (tasks.Any(x => !x.IsCompleted) && !token.IsCancellationRequested)
                 {
-                    Task.WhenAll(tasks).Wait(token);
-                } catch { }
-                source.Cancel();
-                return value;
+                }
+
+                if (!token.IsCancellationRequested)
+                {
+                    return value;
+                }
+                else
+                {
+                    source.Cancel();
+                    while (tasks.Any(x => !x.IsCompleted))
+                    {
+                    }
+                    return value;
+                }
             }
             else
             {
@@ -506,12 +516,23 @@ namespace ParallelRisk
                     }
                 }
 
-                try
+
+                while (tasks.Any(x => !x.IsCompleted) && !token.IsCancellationRequested)
                 {
-                    Task.WhenAll(tasks).Wait(token);
-                } catch { }
-                source.Cancel();
-                return value;
+                }
+
+                if (!token.IsCancellationRequested)
+                {
+                    return value;
+                }
+                else
+                {
+                    source.Cancel();
+                    while (tasks.Any(x => !x.IsCompleted))
+                    {
+                    }
+                    return value;
+                }
             }
         }
 
@@ -524,6 +545,9 @@ namespace ParallelRisk
             double value = 0;
             foreach ((double probability, TState outcome) in node.Outcomes())
             {
+                if (token.IsCancellationRequested)
+                    return null;
+
                 if (first)
                 {
                     first = false;
