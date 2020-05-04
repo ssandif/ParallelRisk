@@ -36,7 +36,12 @@ namespace ParallelRiskConsole
             Stopwatch stopwatch = null;
 
             BoardState board = Risk.StandardBoard();
-            var pool = new ControlledThreadPool(32);
+            var pool = new ControlledThreadPool(8);
+
+            options.AlphaBeta = true;
+            options.MaxDepth = 4;
+            options.YoungBrotherWaits = true;
+            options.Time = true;
 
             if (options.Time)
             {
@@ -46,7 +51,7 @@ namespace ParallelRiskConsole
 
             Move move = (options.AlphaBeta, options.Parallel, options.YoungBrotherWaits) switch
             {
-                (true, false, true) => AlphaBeta.ParallelYbw<BoardState, Move>(board, options.MaxDepth, pool),
+                (true, false, true) => AlphaBeta.ParallelYbwc<BoardState, Move>(board, options.MaxDepth, pool),
                 (true, true, false) => AlphaBeta.Parallel<BoardState, Move>(board, options.MaxDepth),
                 (true, false, false) => AlphaBeta.Serial<BoardState, Move>(board, options.MaxDepth),
                 (false, false, true) => Minimax.ParallelYbw<BoardState, Move>(board, options.MaxDepth, pool),
