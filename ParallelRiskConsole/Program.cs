@@ -16,7 +16,7 @@ namespace ParallelRiskConsole
             [Option('a', "alphabeta", Required = false, Default = false, HelpText = "Whether or not to use alpha-beta pruning.")]
             public bool AlphaBeta { get; set; }
 
-            [Option('p', "parallel", SetName = "parallelism", Required = false, Default = false, HelpText = "Use the default parallel implementation.")]
+            [Option('P', "parallel", SetName = "parallelism", Required = false, Default = false, HelpText = "Use the default parallel implementation.")]
             public bool Parallel { get; set; }
 
             [Option('y', "ybw", SetName = "parallelism", Required = false, Default = false, HelpText = "Use the Young Brother Waits parallel implementation.")]
