@@ -16,8 +16,11 @@ namespace ParallelRiskConsole
             [Option('a', "alphabeta", Required = false, Default = false, HelpText = "Whether or not to use alpha-beta pruning.")]
             public bool AlphaBeta { get; set; }
 
-            [Option('P', "parallel", Required = false, Default = false, HelpText = "Use the MPI-enabled version of the algorithm.")]
+            [Option('p', "parallel", SetName = "parallelism", Required = false, Default = false, HelpText = "Use the default parallel implementation.")]
             public bool Parallel { get; set; }
+
+            [Option('y', "ybw", SetName = "parallelism", Required = false, Default = false, HelpText = "Use the Young Brother Waits parallel implementation.")]
+            public bool YoungBrotherWaits { get; set; }
 
             [Option('t', "time", Required = false, Default = false, HelpText = "Times the program runtime.")]
             public bool Time { get; set; }
@@ -41,12 +44,15 @@ namespace ParallelRiskConsole
                 stopwatch.Start();
             }
 
-            Move move = (options.AlphaBeta, options.Parallel) switch
+            Move move = (options.AlphaBeta, options.Parallel, options.YoungBrotherWaits) switch
             {
-                (true, true) => AlphaBeta.Parallel<BoardState, Move>(board, options.MaxDepth),
-                (true, false) => AlphaBeta.Serial<BoardState, Move>(board, options.MaxDepth),
-                (false, true) => Minimax.Parallel<BoardState, Move>(board, options.MaxDepth),
-                (false, false) => Minimax.Serial<BoardState, Move>(board, options.MaxDepth)
+                (true, false, true) => AlphaBeta.ParallelYbw<BoardState, Move>(board, options.MaxDepth, pool),
+                (true, true, false) => AlphaBeta.Parallel<BoardState, Move>(board, options.MaxDepth),
+                (true, false, false) => AlphaBeta.Serial<BoardState, Move>(board, options.MaxDepth),
+                (false, false, true) => Minimax.ParallelYbw<BoardState, Move>(board, options.MaxDepth, pool),
+                (false, true, false) => Minimax.Parallel<BoardState, Move>(board, options.MaxDepth),
+                (false, false, false) => Minimax.Serial<BoardState, Move>(board, options.MaxDepth),
+                _ => throw new ArgumentException()
             };
 
             stopwatch?.Stop();
