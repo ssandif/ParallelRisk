@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
 namespace ParallelRisk
 {
+    // Generates a standard risk board.
     public static class Risk
     {
+        // The id of the territory, safe to cast to and from int as necessary.
         public enum Id : int
         {
             Alaska,
@@ -52,15 +55,32 @@ namespace ParallelRisk
             MiddleEast
         }
 
-        private static ImmutableArray<int> Territories(params Id[] ids)
+        // Returns a randomized initial board state with the territories set up as a standard risk board. If seed is
+        // null, uses a time-based random seed.
+        public static BoardState RandomizedBoardPlacement(int? seed = null)
         {
-            return ImmutableArray.CreateRange(ids.Select(x => (int)x));
+            var random = (seed == null) ? new Random() : new Random(seed.GetValueOrDefault());
+
+            return new BoardState(Continents(), AdjacencyMatrix(), ImmutableArray.CreateRange(RandomTerritories(random)), true);
         }
 
-        public static BoardState StandardBoard(int? seed = null)
+        // Use the provided random number generator to generate random troop placements on territories.
+        private static IEnumerable<Territory> RandomTerritories(Random random)
         {
-            var random = seed == null ? new Random() : new Random(seed.GetValueOrDefault());
-            var continents = ImmutableArray.Create(
+            return Enumerable.Range(0, 42).Select(id =>
+            {
+                // Set player to max, min, or neutral (0, 1, or 2, respectively)
+                var player = (Player)random.Next(0, 3);
+                // Add between 1 and 10 troops
+                int troopCount = random.Next(1, 11);
+                return new Territory(id, player, troopCount);
+            });
+        }
+
+        // Returns the continents from the standard Risk board.
+        private static ImmutableArray<Continent> Continents()
+        {
+            return ImmutableArray.Create(
                 new Continent("North America", 5, Territories(
                     Id.Alaska,
                     Id.NorthwestTerritory,
@@ -109,8 +129,12 @@ namespace ParallelRisk
                     Id.Afghanistan,
                     Id.Ural,
                     Id.MiddleEast))
-
             );
+        }
+
+        // Returns an adjacency matrix representing the territory connections in the standard Risk board.
+        private static ImmutableAdjacencyMatrix AdjacencyMatrix()
+        {
             ImmutableAdjacencyMatrix.Builder builder = ImmutableAdjacencyMatrix.CreateBuilder(42);
             /*  Comment note: 
              *  // comments represent countries already attached to + the name of the current
@@ -247,20 +271,20 @@ namespace ParallelRisk
             AddConnection(builder, Id.WesternAustralia, Id.EasternAustralia);
             // Eastern Australia connecteed to New Guinea/Westenr Australia already.
             // All done initialization of connections!
-
-            var territories = Enumerable.Range(0, 42).Select(id =>
-            {
-                var player = (Player)random.Next(0, 3);
-                int troopCount = random.Next(1, 11);
-                return new Territory(id, player, troopCount);
-            }).ToList();
-
-            
-            return new BoardState(continents, builder.MoveToImmutable(), ImmutableArray.CreateRange(territories), true);
+            return builder.MoveToImmutable();
         }
 
+        // Helper function for creating an immutable array of territories.
+        private static ImmutableArray<int> Territories(params Id[] ids)
+        {
+            return ImmutableArray.CreateRange(ids.Select(x => (int)x));
+        }
+
+        // Helper function for adding a territory connection to the adjacency matrix. Makes casting to an integer
+        // unnecessary.
         private static void AddConnection(ImmutableAdjacencyMatrix.Builder builder, Id t1, Id t2)
         {
+            // Only need to set one way, the adjacency matrix assumes an undirected graph.
             builder[(int)t1, (int)t2] = true;
         }
     }

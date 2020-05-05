@@ -7,6 +7,7 @@ namespace ParallelRiskConsole
 {
     class Program
     {
+        // Command Line Options
         class Options
         {
             [Option('D', "maxdepth", Required = false, Default = 10, HelpText = "Maximum depth to search to.")]
@@ -37,7 +38,7 @@ namespace ParallelRiskConsole
         {
             Stopwatch stopwatch = null;
 
-            BoardState board = Risk.StandardBoard(0);
+            BoardState board = Risk.RandomizedBoardPlacement(0);
             var pool = new ControlledThreadPool(options.Cores - 1);
 
             if (options.Time)

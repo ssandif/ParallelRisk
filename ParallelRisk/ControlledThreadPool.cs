@@ -3,64 +3,88 @@ using System.Threading.Tasks;
 
 namespace ParallelRisk
 {
+    // Provides a controlled way to run tasks such that, when possible, they are run on background workers up to the
+    // limit imposed by the pool. Note that the current implementation uses Tasks from the default ThreadPool.
     public sealed class ControlledThreadPool
     {
+        // Lock used to synchronize access to _workerThreads
         private readonly object _lock = new object();
-        private int _threads;
 
-        public ControlledThreadPool(int threads = 1)
+        // The number of worker threads. Should never be below 0.
+        private int _workerThreads;
+
+        // Sets the number of worker threads. Keep in mind that the total number of threads used by RunOnPoolIfPossible
+        // will be one more than this number, because you must consider the manager thread. the function is called
+        // from.
+        public ControlledThreadPool(int workerThreads)
         {
-            _threads = threads;
+            _workerThreads = workerThreads;
         }
 
-        public ValueTask<T> TryRun<T>(Func<T> function)
+        // Runs the function on a task from the pool if possible, otherwise, runs it on the current thread. Note that
+        // the task will technically be subject to the behavior of the default ThreadPool, so be careful using tasks
+        // elsewhere if you want to guarantee good parallel performance.
+        public ValueTask<T> RunOnPoolIfPossible<T>(Func<T> function)
         {
-            if (_threads > 0)
+            // Check if worker threads are available. This early check avoids excess locking
+            if (_workerThreads > 0)
             {
                 lock (_lock)
                 {
-                    if (_threads > 0)
+                    // Check again to ensure number hasn't changed after the lock
+                    if (_workerThreads > 0)
                     {
-                        --_threads;
+                        --_workerThreads;
+                        // Task must be continued with ReturnThread in order to ensure the thread returns to the pool
                         return new ValueTask<T>(Task.Run(function).ContinueWith(ReturnThread));
                     }
                 }
             }
 
+            // Run function on the current thread and return the result.
             return new ValueTask<T>(function());
         }
 
-        public ValueTask TryRun(Action action)
+        // Runs the action on a task from the pool if possible, otherwise, runs it on the current thread. Note that
+        // the task will technically be subject to the behavior of the default ThreadPool, so be careful using tasks
+        // elsewhere if you want to guarantee good parallel performance.
+        public ValueTask RunOnPoolIfPossible(Action action)
         {
-            if (_threads > 0)
+            // Check if worker threads are available. This early check avoids excess locking
+            if (_workerThreads > 0)
             {
                 lock (_lock)
                 {
-                    if (_threads > 0)
+                    // Check again to ensure number hasn't changed after the lock
+                    if (_workerThreads > 0)
                     {
-                        --_threads;
+                        --_workerThreads;
+                        // Task must be continued with ReturnThread in order to ensure the thread returns to the pool
                         return new ValueTask(Task.Run(action).ContinueWith(ReturnThread));
                     }
                 }
             }
 
+            // Run function on the current thread and return
             action();
             return new ValueTask();
         }
 
+        // Return one thread to the thread pool.
         private void ReturnThread(Task task)
         {
             lock (_lock)
             {
-                ++_threads;
+                ++_workerThreads;
             }
         }
 
+        // Return one thread to the thread pool.
         private T ReturnThread<T>(Task<T> task)
         {
             lock (_lock)
             {
-                ++_threads;
+                ++_workerThreads;
             }
             return task.Result;
         }

@@ -5,11 +5,22 @@ using static System.Math;
 
 namespace ParallelRisk
 {
+    // Represents the current state of the board, as well as basic board information such as connections between
+    // territories and the continents being used. Note that this type is immutable, all functions that would normally
+    // modify it return a new state instead.
     public readonly struct BoardState : IState<Move>
     {
+        // The continents used on the board.
         public ImmutableArray<Continent> Continents { get; }
+
+        // An adjacency matrix that represents connections between territories.
         public ImmutableAdjacencyMatrix Adjacency { get; }
+
+        // All territories on the board, ordered such that the index of a territory is the same as its id.
         public ImmutableArray<Territory> Territories { get; }
+
+        // True if it's the max player's turn, false if it's the min player's turn.
+        public bool IsMaxPlayerTurn { get; }
 
         public BoardState(ImmutableArray<Continent> continents, ImmutableAdjacencyMatrix adjacency, ImmutableArray<Territory> territories, bool maxPlayerTurn)
         {
@@ -19,7 +30,7 @@ namespace ParallelRisk
             IsMaxPlayerTurn = maxPlayerTurn;
         }
 
-        // these two are the same, just different incase some work needs to be done on them
+        // Returns a new board state with the results of an attack.
         public BoardState AttackUpdate(in Territory from, in Territory to)
         {
             var builder = Territories.ToBuilder();
@@ -28,19 +39,15 @@ namespace ParallelRisk
             return new BoardState(Continents, Adjacency, builder.MoveToImmutable(), IsMaxPlayerTurn);
         }
 
-        public BoardState ReinforceUpdate(in Territory from, in Territory to)
-        {
-            var builder = Territories.ToBuilder();
-            builder[from.Id] = from;
-            builder[to.Id] = to;
-            return new BoardState(Continents, Adjacency, builder.MoveToImmutable(), !IsMaxPlayerTurn);
-        }
-
+        // Returns a new board state with the turn passed to the next player.
         public BoardState Pass()
         {
             return new BoardState(Continents, Adjacency, Territories, !IsMaxPlayerTurn);
         }
 
+
+        // Returns a new board state with the turn passed to the next player and "fortifyCount" troops moved from
+        // the territory with fromId to the territory with toId.
         public BoardState PassAndFortify(int fromId, int toId, int fortifyCount)
         {
             var builder = Territories.ToBuilder();
@@ -49,28 +56,24 @@ namespace ParallelRisk
             return new BoardState(Continents, Adjacency, builder.MoveToImmutable(), !IsMaxPlayerTurn);
         }
 
-        public int TotalContinentBonus(Player player)
+        // Estimated utility for the current board state.
+        public double Heuristic()
         {
-            int bonus = 0;
-            foreach (Continent continent in Continents)
-            {
-                if (HasBonus(player, continent))
-                    bonus += continent.Bonus;
-            }
-            return bonus;
+            // note: this is the 'continent bonus' weighting
+            const double C = 1;
+            double value = 0;
+            value += TotalTerritoriesControlled(Player.Max) - TotalTerritoriesControlled(Player.Min);
+            value += C * (TotalContinentBonus(Player.Max) - TotalContinentBonus(Player.Min));
+            return value;
         }
 
-        public bool HasBonus(Player player, in Continent continent)
+        // Returns true of the game is over (one of the non-neutral players has been eliminated).
+        public bool IsTerminal()
         {
-            foreach (int id in continent.Territories)
-            {
-                if (Territories[id].Player != player)
-                    return false;
-            }
-
-            return true;
+            return TotalTerritoriesControlled(Player.Max) == 0 || TotalTerritoriesControlled(Player.Min) == 0;
         }
 
+        // Returns the total number of territories controlled by the player.
         public int TotalTerritoriesControlled(Player player)
         {
             int count = 0;
@@ -82,28 +85,32 @@ namespace ParallelRisk
             return count;
         }
 
-        public double Heuristic()
+        // Returns the total contient bonus for the player.
+        public int TotalContinentBonus(Player player)
         {
-            // note: this is the 'continent bonus' multiplier
-            const double C = 1;
-            double value = 0;
-            value += TotalTerritoriesControlled(Player.Max) - TotalTerritoriesControlled(Player.Min);
-            value += C * (TotalContinentBonus(Player.Max) - TotalContinentBonus(Player.Min));
-            return value;
+            int bonus = 0;
+            foreach (Continent continent in Continents)
+            {
+                if (HasBonus(player, continent))
+                    bonus += continent.Bonus;
+            }
+            return bonus;
         }
 
-        public int OptimalOccupyingTroops(int fromId, int toId, int attackers)
+        // Returns whether or not the player has the continent bonus for the specified continent.
+        public bool HasBonus(Player player, in Continent continent)
         {
-            int available = Territories[fromId].TroopCount - 1;
-            Player attacker = Territories[fromId].Player;
-            // Subtract 1 for the territory you're about to occupy
-            int fromAttacks = TotalAttackableTerritories(fromId, attacker) - 1;
-            int toAttacks = TotalAttackableTerritories(toId, attacker);
-            double ratio = (double)toAttacks / (fromAttacks + toAttacks);
-            int optimal = (int)Round(available * ratio, MidpointRounding.AwayFromZero);
-            return Min(attackers, optimal);
+            foreach (int id in continent.Territories)
+            {
+                if (Territories[id].Player != player)
+                    return false;
+            }
+
+            return true;
         }
 
+        // Returns the total number of territories that can be attacked from territory "territoryId", assuming it's
+        // controlled by the specified player.
         public int TotalAttackableTerritories(int territoryId, Player attacker)
         {
             int count = 0;
@@ -115,13 +122,7 @@ namespace ParallelRisk
             return count;
         }
 
-        public bool IsTerminal()
-        {
-            return TotalTerritoriesControlled(Player.Max) == 0 || TotalTerritoriesControlled(Player.Min) == 0;
-        }
-
-        public bool IsMaxPlayerTurn { get; }
-
+        // Returns all possible moves the current player may make (attack, fortify + pass, or pass).
         public IEnumerable<Move> Moves()
         {
             yield return Move.Pass(this);
@@ -146,6 +147,7 @@ namespace ParallelRisk
             }
         }
 
+        // All possible reinforcement moves.
         private IEnumerable<Move> ReinforceMoves()
         {
             var fromT = new List<Territory>();
@@ -196,6 +198,22 @@ namespace ParallelRisk
             return;
         }
 
+
+        // Returns the optimal number of occuplying troops for a successful invasion from territory "fromId" to
+        // territory "toId"
+        public int OptimalOccupyingTroops(int fromId, int toId, int attackers)
+        {
+            int available = Territories[fromId].TroopCount - 1;
+            Player attacker = Territories[fromId].Player;
+            // Subtract 1 for the territory you're about to occupy
+            int fromAttacks = TotalAttackableTerritories(fromId, attacker) - 1;
+            int toAttacks = TotalAttackableTerritories(toId, attacker);
+            double ratio = (double)toAttacks / (fromAttacks + toAttacks);
+            int optimal = (int)Round(available * ratio, MidpointRounding.AwayFromZero);
+            return Min(attackers, optimal);
+        }
+
+        // Whether or not the specified player is the current player.
         private bool IsCurrentPlayer(Player player)
         {
             return (IsMaxPlayerTurn && player == Player.Max) || (!IsMaxPlayerTurn && player == Player.Min);
