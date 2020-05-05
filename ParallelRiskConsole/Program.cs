@@ -58,7 +58,7 @@ namespace ParallelRiskConsole
             stopwatch?.Stop();
 
             if (move.IsAttack)
-                Console.WriteLine($"Attack from {(Risk.Id)move.FromId} to {(Risk.Id)move.ToId}");
+                Console.WriteLine($"Attack dotfrom {(Risk.Id)move.FromId} to {(Risk.Id)move.ToId}");
             else if (move.FortifyCount > 0)
                 Console.WriteLine($"Pass turn and fortify {move.FortifyCount} troops from {(Risk.Id)move.FromId} to {(Risk.Id)move.ToId}");
             else

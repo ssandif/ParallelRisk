@@ -124,6 +124,7 @@ namespace ParallelRisk
                 return default;
 
             List<Task> taskList = new List<Task>();
+
             int i = 0;
             if (node.IsMaxPlayerTurn)
             {
