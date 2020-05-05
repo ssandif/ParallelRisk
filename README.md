@@ -6,7 +6,7 @@ This library provides an easy way to run minimax and alpha-beta pruning, both in
 
 You can find already-built versions of the program in the **Releases** tab of GitHub.
 
-If you have downloaded or built the standalone Windows executable, simply run:
+If you have downloaded or built a standalone excutable, simply run the following, or the equivalent on Linux or OSX:
 
 ```shell
 ParallelRiskConsole.exe <YOUR ARGUMENTS HERE>
@@ -15,7 +15,7 @@ ParallelRiskConsole.exe <YOUR ARGUMENTS HERE>
 Otherwise, if you have downloaded the cross-platform dll file, install [.NET Core 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1) and run:
 
 ```shell
-dotnet run ParallelRiskConsole.exe <YOUR ARGUMENTS HERE>
+dotnet run ParallelRiskConsole.dll <YOUR ARGUMENTS HERE>
 ```
 
 To view possible command line arguments, use the `--help` argument.
