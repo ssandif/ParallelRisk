@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace ParallelRisk
 {
-    public class ControlledThreadPool
+    public sealed class ControlledThreadPool
     {
         private readonly object _lock = new object();
         private int _threads;
@@ -14,7 +13,7 @@ namespace ParallelRisk
             _threads = threads;
         }
 
-        public Task<T> TryRun<T>(Func<T> function)
+        public ValueTask<T> TryRun<T>(Func<T> function)
         {
             if (_threads > 0)
             {
@@ -23,15 +22,15 @@ namespace ParallelRisk
                     if (_threads > 0)
                     {
                         --_threads;
-                        return Task.Run(function).ContinueWith(ReturnThread);
+                        return new ValueTask<T>(Task.Run(function).ContinueWith(ReturnThread));
                     }
                 }
             }
 
-            return Task.FromResult(function());
+            return new ValueTask<T>(function());
         }
 
-        public Task<T> TryRun<T>(Func<T> function, CancellationToken token)
+        public ValueTask TryRun(Action action)
         {
             if (_threads > 0)
             {
@@ -40,12 +39,21 @@ namespace ParallelRisk
                     if (_threads > 0)
                     {
                         --_threads;
-                        return Task.Run(function, token).ContinueWith(ReturnThread);
+                        return new ValueTask(Task.Run(action).ContinueWith(ReturnThread));
                     }
                 }
             }
 
-            return Task.FromResult(function());
+            action();
+            return new ValueTask();
+        }
+
+        private void ReturnThread(Task task)
+        {
+            lock (_lock)
+            {
+                ++_threads;
+            }
         }
 
         private T ReturnThread<T>(Task<T> task)

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Threading;
 using CommandLine;
 using ParallelRisk;
 
@@ -10,19 +9,22 @@ namespace ParallelRiskConsole
     {
         class Options
         {
-            [Option('d', "maxdepth", Required = false, Default = 10, HelpText = "Maximum depth to search to.")]
+            [Option('D', "maxdepth", Required = false, Default = 10, HelpText = "Maximum depth to search to.")]
             public int MaxDepth { get; set; }
 
-            [Option('a', "alphabeta", Required = false, Default = false, HelpText = "Whether or not to use alpha-beta pruning.")]
+            [Option('C', "maxdepth", Required = false, Default = 4, HelpText = "Number of cores to treat the machine as having.")]
+            public int Cores { get; set; }
+
+            [Option('A', "alphabeta", Required = false, Default = false, HelpText = "Whether or not to use alpha-beta pruning.")]
             public bool AlphaBeta { get; set; }
 
             [Option('P', "parallel", SetName = "parallelism", Required = false, Default = false, HelpText = "Use the default parallel implementation.")]
             public bool Parallel { get; set; }
 
-            [Option('y', "ybw", SetName = "parallelism", Required = false, Default = false, HelpText = "Use the Young Brother Waits parallel implementation.")]
-            public bool YoungBrotherWaits { get; set; }
+            [Option('Y', "ybw", SetName = "parallelism", Required = false, Default = false, HelpText = "Use the Young Brothers Wait parallel implementation.")]
+            public bool YoungBrothersWait { get; set; }
 
-            [Option('t', "time", Required = false, Default = false, HelpText = "Times the program runtime.")]
+            [Option('T', "time", Required = false, Default = false, HelpText = "Times the program runtime.")]
             public bool Time { get; set; }
         }
 
@@ -35,8 +37,8 @@ namespace ParallelRiskConsole
         {
             Stopwatch stopwatch = null;
 
-            BoardState board = Risk.StandardBoard();
-            var pool = new ControlledThreadPool(32);
+            BoardState board = Risk.StandardBoard(0);
+            var pool = new ControlledThreadPool(options.Cores - 1);
 
             if (options.Time)
             {
@@ -44,7 +46,7 @@ namespace ParallelRiskConsole
                 stopwatch.Start();
             }
 
-            Move move = (options.AlphaBeta, options.Parallel, options.YoungBrotherWaits) switch
+            Move move = (options.AlphaBeta, options.Parallel, options.YoungBrothersWait) switch
             {
                 (true, false, true) => AlphaBeta.ParallelYbw<BoardState, Move>(board, options.MaxDepth, pool),
                 (true, true, false) => AlphaBeta.Parallel<BoardState, Move>(board, options.MaxDepth),
